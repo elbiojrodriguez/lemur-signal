@@ -1,7 +1,7 @@
 {
-  "name": "lemurrtc",
+  "name": "lemurnetlify",
   "version": "1.0.0",
-  "description": "Servidor de sinalização WebRTC para lemur-dono e lemur-visitante",
+  "description": "Servidor de sinalização WebRTC para lemur-interface no Netlify",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
