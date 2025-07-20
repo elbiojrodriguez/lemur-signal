@@ -1,31 +1,33 @@
 const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
+
+// ✅ CORS liberado para o Netlify atual
 const io = require('socket.io')(http, {
   cors: {
-    origin: 'https://lemurpublic.netlify.app',
+    origin: 'https://lemur-interface.netlify.app',
     methods: ['GET', 'POST'],
     credentials: true
   }
 });
 
 const path = require('path');
-const clients = {}; // Mapeia ID customizado para socket.id
+const clients = {}; // Mapeia IDs personalizados para socket.id
 
-// Servir arquivos HTML da pasta 'public'
+// (Opcional) Servir arquivos locais, se houver algo no Render
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Conexão Socket.IO
+// 🔌 Conexões WebSocket
 io.on('connection', (socket) => {
   console.log(`⚡ Novo socket conectado: ${socket.id}`);
 
-  // Registro de ID
+  // Registra o ID único gerado nos HTMLs
   socket.on('register', (id) => {
     clients[id] = socket.id;
     console.log(`🔗 ${id} registrado com socket ${socket.id}`);
   });
 
-  // Chamada enviada
+  // Visitante envia oferta
   socket.on('call', ({ to, offer }) => {
     const receiverSocketId = clients[to];
     if (receiverSocketId) {
@@ -36,7 +38,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Resposta à chamada
+  // Dono responde à chamada
   socket.on('answer', ({ to, answer }) => {
     const callerSocketId = clients[to];
     if (callerSocketId) {
@@ -44,7 +46,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ICE Candidate
+  // ICE Candidate (ambos lados)
   socket.on('ice-candidate', ({ to, candidate }) => {
     const targetSocketId = clients[to];
     if (targetSocketId) {
@@ -52,7 +54,7 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Remover do mapa ao sair
+  // Limpa registro ao desconectar
   socket.on('disconnect', () => {
     for (const id in clients) {
       if (clients[id] === socket.id) {
@@ -64,7 +66,7 @@ io.on('connection', (socket) => {
   });
 });
 
-// Inicia servidor
+// 🚀 Inicia servidor
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
   console.log(`🟢 Servidor rodando na porta ${PORT}`);
