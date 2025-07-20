@@ -2,7 +2,6 @@ const express = require('express');
 const app = express();
 const http = require('http').createServer(app);
 
-// ✅ CORS liberado para o Netlify atual
 const io = require('socket.io')(http, {
   cors: {
     origin: 'https://lemur-interface.netlify.app',
@@ -12,22 +11,18 @@ const io = require('socket.io')(http, {
 });
 
 const path = require('path');
-const clients = {}; // Mapeia IDs personalizados para socket.id
+const clients = {};
 
-// (Opcional) Servir arquivos locais, se houver algo no Render
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 🔌 Conexões WebSocket
 io.on('connection', (socket) => {
   console.log(`⚡ Novo socket conectado: ${socket.id}`);
 
-  // Registra o ID único gerado nos HTMLs
   socket.on('register', (id) => {
     clients[id] = socket.id;
     console.log(`🔗 ${id} registrado com socket ${socket.id}`);
   });
 
-  // Visitante envia oferta
   socket.on('call', ({ to, offer }) => {
     const receiverSocketId = clients[to];
     if (receiverSocketId) {
@@ -38,7 +33,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Dono responde à chamada
   socket.on('answer', ({ to, answer }) => {
     const callerSocketId = clients[to];
     if (callerSocketId) {
@@ -46,7 +40,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // ICE Candidate (ambos lados)
   socket.on('ice-candidate', ({ to, candidate }) => {
     const targetSocketId = clients[to];
     if (targetSocketId) {
@@ -54,7 +47,6 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Limpa registro ao desconectar
   socket.on('disconnect', () => {
     for (const id in clients) {
       if (clients[id] === socket.id) {
@@ -66,7 +58,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// 🚀 Inicia servidor
 const PORT = process.env.PORT || 3000;
 http.listen(PORT, () => {
   console.log(`🟢 Servidor rodando na porta ${PORT}`);
