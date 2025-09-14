@@ -6,42 +6,43 @@ const path = require('path');
 const app = express();
 const server = http.createServer(app);
 
-// Configuração do Socket.IO com CORS ajustado
+// 🌐 Configuração do Socket.IO com CORS liberado
 const io = socketIO(server, {
   cors: {
-    origin: '*', // Permite todas as origens (em produção, restrinja para seus domínios)
+    origin: '*',
     methods: ['GET', 'POST']
   }
 });
 
-// Mapa de clientes conectados: { uuid: socket.id }
+// 🗂️ Mapa de clientes conectados: { uuid: socket.id }
 const clients = {};
 
 io.on('connection', socket => {
   console.log(`🟢 Novo socket conectado: ${socket.id}`);
 
-  // Cliente se registra com UUID
+  // 🆔 Registro de cliente com UUID
   socket.on('register', uuid => {
     clients[uuid] = socket.id;
-    socket.uuid = uuid; // salva no próprio socket
+    socket.uuid = uuid;
     console.log(`🔖 Registrado: ${uuid} -> ${socket.id}`);
   });
 
-  // Cliente envia oferta de chamada para outro
-  socket.on('call', ({ to, offer }) => {
+  // 📞 Cliente inicia chamada para outro
+  socket.on('call', ({ to, offer, callerLang }) => {
     const targetSocketId = clients[to];
     if (targetSocketId) {
       io.to(targetSocketId).emit('incomingCall', {
         from: socket.uuid,
-        offer
+        offer,
+        callerLang // ✅ idioma do caller incluído
       });
-      console.log(`📞 Chamada de ${socket.uuid} para ${to}`);
+      console.log(`📞 Chamada de ${socket.uuid} para ${to} com idioma ${callerLang}`);
     } else {
       console.log(`❌ Destinatário ${to} não encontrado`);
     }
   });
 
-  // Cliente envia resposta da chamada
+  // ✅ Cliente envia resposta da chamada
   socket.on('answer', ({ to, answer }) => {
     const targetSocketId = clients[to];
     if (targetSocketId) {
@@ -50,7 +51,7 @@ io.on('connection', socket => {
     }
   });
 
-  // Candidatos ICE
+  // 🧊 Troca de candidatos ICE
   socket.on('ice-candidate', ({ to, candidate }) => {
     const targetSocketId = clients[to];
     if (targetSocketId) {
@@ -59,7 +60,7 @@ io.on('connection', socket => {
     }
   });
 
-  // Quando desconecta
+  // 🔴 Cliente desconectado
   socket.on('disconnect', () => {
     if (socket.uuid) {
       delete clients[socket.uuid];
@@ -68,6 +69,7 @@ io.on('connection', socket => {
   });
 });
 
+// 🚀 Inicializa servidor
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`🚀 Servidor de sinalização rodando na porta ${PORT}`);
